@@ -23,20 +23,23 @@ def start_recording():
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    transcription_box.delete(1.0, END)  # Clear any previous text
+    transcription_box.delete(1.0, END)
     transcription_box.insert(END, "Recording started. You can begin speaking now.")
-    root.after(500, lambda: transcription_box.insert(END, "...\n"))  # Visual feedback for readiness
+    root.after(500, lambda: transcription_box.insert(END, "...\n"))
+    record_button.config(state="disabled")  # Disable Start button
+    stop_button.config(state="normal")     # Enable Stop button
 
-# Function to stop recording and transcribe
 def stop_recording():
     global recording_process
     if recording_process:
         recording_process.terminate()
         recording_process = None
-        log_to_console(f"Recording stopped. File saved at: {AUDIO_PATH}")
+        transcription_box.delete(1.0, END)
+        transcription_box.insert(END, "Transcription in progress...")
         threading.Thread(target=transcribe_audio).start()
+        stop_button.config(state="disabled")  # Disable Stop button
+        record_button.config(state="normal")  # Enable Start button
 
-# Function to transcribe audio
 def transcribe_audio():
     if not os.path.exists(AUDIO_PATH):
         print("No audio file found. Please record first.")
@@ -52,7 +55,6 @@ def transcribe_audio():
     finally:
         try:
             os.remove(AUDIO_PATH)
-            log_to_console("Temporary audio file deleted.")
         except OSError as e:
             print(f"Error deleting audio file: {e}")
 
@@ -69,6 +71,7 @@ record_button = Button(root, text="Start Recording", command=start_recording, wi
 record_button.pack(pady=5)
 
 stop_button = Button(root, text="Stop Recording", command=stop_recording, width=20)
+stop_button.config(state="disabled")  # Disable Stop button on startup
 stop_button.pack(pady=5)
 
 # Text box for transcription results
