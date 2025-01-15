@@ -4,6 +4,7 @@ import threading
 from tkinter import Tk, Button, Text, END
 import whisper
 import tempfile
+import time
 
 # Paths and configurations
 AUDIO_DIR = tempfile.gettempdir()
@@ -18,11 +19,13 @@ whisper_model = whisper.load_model(MODEL_SIZE)
 def start_recording():
     global recording_process
     recording_process = subprocess.Popen(
-    ["arecord", "-f", "cd", AUDIO_PATH],
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
+        ["arecord", "-f", "cd", AUDIO_PATH],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
-    log_to_console("Recording started...")
+    transcription_box.delete(1.0, END)  # Clear any previous text
+    transcription_box.insert(END, "Recording started. You can begin speaking now.")
+    root.after(500, lambda: transcription_box.insert(END, "...\n"))  # Visual feedback for readiness
 
 # Function to stop recording and transcribe
 def stop_recording():

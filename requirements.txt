@@ -1,3 +1,2 @@
 openai-whisper
-pyperclip
 torch
