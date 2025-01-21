@@ -4,6 +4,9 @@ import threading
 from tkinter import Tk, Button, Text, Entry, Label, END
 import whisper
 import tempfile
+import time
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 AUDIO_DIR = tempfile.gettempdir()
 AUDIO_FILENAME = "recorded_audio.wav"
@@ -30,6 +33,7 @@ def start_recording():
     transcription_box.delete(1.0, END)
     transcription_box.insert(END, "Recording started. You can begin speaking now.\n")
     record_button.config(text="Stop Recording")
+    root.after(500, lambda: transcription_box.insert(END, "...\n"))
 
 def stop_recording():
     global recording_process
@@ -38,8 +42,8 @@ def stop_recording():
         recording_process = None
         transcription_box.delete(1.0, END)
         transcription_box.insert(END, "Transcription in progress...\n")
+        record_button.config(state="disabled")  # Disable recording during transcription
         threading.Thread(target=transcribe_audio).start()
-        record_button.config(text="Start Recording")
 
 def transcribe_audio():
     if not os.path.exists(AUDIO_PATH):
@@ -57,6 +61,7 @@ def transcribe_audio():
             os.remove(AUDIO_PATH)
         except OSError as e:
             print(f"Error deleting audio file: {e}")
+        record_button.config(state="normal", text="Start Recording")  # Re-enable recording button
 
 def select_all(event):
     transcription_box.tag_add("sel", "1.0", "end")
