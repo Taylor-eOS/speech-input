@@ -9,9 +9,8 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 AUDIO_DIR = tempfile.gettempdir()
-AUDIO_FILENAME = "recorded_audio.wav"
+AUDIO_FILENAME = "recording.wav"
 AUDIO_PATH = os.path.join(AUDIO_DIR, AUDIO_FILENAME)
-
 MODEL_SIZE = "large"
 whisper_model = whisper.load_model(MODEL_SIZE)
 recording_process = None
@@ -31,7 +30,7 @@ def start_recording():
         stderr=subprocess.PIPE,
     )
     transcription_box.delete(1.0, END)
-    transcription_box.insert(END, "Recording started. You can begin speaking now.\n")
+    transcription_box.insert(END, "Recording started.\n")
     record_button.config(text="Stop Recording")
     root.after(500, lambda: transcription_box.insert(END, "...\n"))
 
