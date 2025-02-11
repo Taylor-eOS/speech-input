@@ -42,7 +42,7 @@ def send_off_segment():
     try:
         recording_process.wait(timeout=2)
     except subprocess.TimeoutExpired:
-        #recording_process.kill()
+        recording_process.kill()
         recording_process.wait()
     segment_filename = os.path.join(AUDIO_DIR, f"segment_{segment_counter}.wav")
     try:
@@ -63,7 +63,7 @@ def finalize_recording():
     try:
         recording_process.wait(timeout=2)
     except subprocess.TimeoutExpired:
-        #recording_process.kill()
+        recording_process.kill()
         recording_process.wait()
     segment_filename = os.path.join(AUDIO_DIR, f"segment_{segment_counter}.wav")
     try:
@@ -115,5 +115,8 @@ def select_all(event):
     event.widget.tag_add("sel", "1.0", "end")
     return "break"
 transcription_box.bind("<Control-a>", select_all)
+def on_closing():
+    finalize_recording()
+    root.destroy()
+root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
-
