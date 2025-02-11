@@ -100,6 +100,9 @@ def transcribe_segment(segment_file, segment_id):
             transcription_box.see(END)
             del completed_segments[next_segment_to_show]
             next_segment_to_show += 1
+        root.clipboard_clear()
+        root.clipboard_append(transcription_box.get("1.0", "end-1c"))
+
 root = Tk()
 root.title("Speech-to-Text Transcription")
 record_button = Button(root, text="Start recording", command=toggle_recording, width=18)
@@ -108,5 +111,9 @@ sendoff_button = Button(root, text="Send off segment", command=send_off_segment,
 sendoff_button.grid(row=0, column=1, pady=3, padx=0, sticky="w")
 transcription_box = Text(root, wrap="word", height=15, width=50)
 transcription_box.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+def select_all(event):
+    event.widget.tag_add("sel", "1.0", "end")
+    return "break"
+transcription_box.bind("<Control-a>", select_all)
 root.mainloop()
 
