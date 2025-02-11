@@ -22,9 +22,8 @@ def begin_recording():
     recording_process = subprocess.Popen(
         ["arecord", "-f", "cd", AUDIO_PATH],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    record_button.config(text="Stop Recording")
+        stderr=subprocess.PIPE,)
+    record_button.config(text="Stop recording")
     sendoff_button.config(state="normal")
 
 def toggle_recording():
@@ -40,12 +39,16 @@ def send_off_segment():
     if recording_process is None:
         return
     recording_process.terminate()
-    recording_process.wait()
-    segment_filename = os.path.join(AUDIO_DIR, f"recording_segment_{segment_counter}.wav")
+    try:
+        recording_process.wait(timeout=2)
+    except subprocess.TimeoutExpired:
+        #recording_process.kill()
+        recording_process.wait()
+    segment_filename = os.path.join(AUDIO_DIR, f"segment_{segment_counter}.wav")
     try:
         os.rename(AUDIO_PATH, segment_filename)
     except OSError as e:
-        print(f"Error renaming file: {e}")
+        print(f"Rename error: {e}")
         return
     current_segment = segment_counter
     segment_counter += 1
@@ -57,17 +60,21 @@ def finalize_recording():
     if recording_process is None:
         return
     recording_process.terminate()
-    recording_process.wait()
-    segment_filename = os.path.join(AUDIO_DIR, f"recording_segment_{segment_counter}.wav")
+    try:
+        recording_process.wait(timeout=2)
+    except subprocess.TimeoutExpired:
+        #recording_process.kill()
+        recording_process.wait()
+    segment_filename = os.path.join(AUDIO_DIR, f"segment_{segment_counter}.wav")
     try:
         os.rename(AUDIO_PATH, segment_filename)
     except OSError as e:
-        print(f"Error renaming file: {e}")
+        print(f"Rename error: {e}")
     current_segment = segment_counter
     segment_counter += 1
     threading.Thread(target=transcribe_segment, args=(segment_filename, current_segment)).start()
     recording_process = None
-    record_button.config(text="Start Recording")
+    record_button.config(text="Start recording")
     sendoff_button.config(state="disabled")
 
 def transcribe_segment(segment_file, segment_id):
@@ -76,28 +83,29 @@ def transcribe_segment(segment_file, segment_id):
     try:
         result = asr_model(segment_file)
         transcription = result['text'].strip()
+        if transcription and transcription[-1] not in ".!?":
+            transcription += "."
     except Exception as e:
         transcription = f"[Transcription error: {e}]"
     finally:
         try:
             os.remove(segment_file)
         except OSError as e:
-            print(f"Error deleting file: {e}")
+            print(f"Delete error: {e}")
     with order_lock:
         global next_segment_to_show
         completed_segments[segment_id] = transcription
         while next_segment_to_show in completed_segments:
-            transcription_box.insert(END, completed_segments[next_segment_to_show] + "\n")
+            transcription_box.insert(END, completed_segments[next_segment_to_show] + " ")
             transcription_box.see(END)
             del completed_segments[next_segment_to_show]
             next_segment_to_show += 1
-
 root = Tk()
 root.title("Speech-to-Text Transcription")
-record_button = Button(root, text="Start recording", command=toggle_recording, width=20)
-record_button.grid(row=0, column=0, pady=5)
-sendoff_button = Button(root, text="Send off segment", command=send_off_segment, width=20, state="disabled")
-sendoff_button.grid(row=0, column=1, pady=5)
+record_button = Button(root, text="Start recording", command=toggle_recording, width=18)
+record_button.grid(row=0, column=0, pady=3, padx=0, sticky="e")
+sendoff_button = Button(root, text="Send off segment", command=send_off_segment, width=18, state="disabled")
+sendoff_button.grid(row=0, column=1, pady=3, padx=0, sticky="w")
 transcription_box = Text(root, wrap="word", height=15, width=50)
 transcription_box.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
 root.mainloop()
