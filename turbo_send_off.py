@@ -16,15 +16,19 @@ segment_counter = 0
 next_segment_to_show = 0
 completed_segments = {}
 order_lock = threading.Lock()
+recording_timer = None
 
 def begin_recording():
-    global recording_process
+    global recording_process, recording_timer
     recording_process = subprocess.Popen(
         ["arecord", "-f", "cd", AUDIO_PATH],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,)
+        stderr=subprocess.PIPE,
+    )
     record_button.config(text="Stop recording")
     sendoff_button.config(state="normal")
+    recording_timer = threading.Timer(29, send_off_segment)
+    recording_timer.start()
 
 def toggle_recording():
     global recording_process
@@ -35,7 +39,10 @@ def toggle_recording():
         finalize_recording()
 
 def send_off_segment():
-    global recording_process, segment_counter
+    global recording_process, segment_counter, recording_timer
+    if recording_timer is not None:
+        recording_timer.cancel()
+        recording_timer = None
     if recording_process is None:
         return
     recording_process.terminate()
@@ -56,7 +63,10 @@ def send_off_segment():
     begin_recording()
 
 def finalize_recording():
-    global recording_process, segment_counter
+    global recording_process, segment_counter, recording_timer
+    if recording_timer is not None:
+        recording_timer.cancel()
+        recording_timer = None
     if recording_process is None:
         return
     recording_process.terminate()
